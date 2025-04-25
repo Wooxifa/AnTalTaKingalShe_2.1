@@ -103,3 +103,5 @@ async def zodiac_detect():
     #print(zodiac_id) чисто проверка
     cur.execute(zodiac_sql, (zodiac_id, login))
     con.commit()
+
+con.close()
