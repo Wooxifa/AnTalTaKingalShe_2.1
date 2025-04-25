@@ -1,6 +1,6 @@
 import logging
 import random
-from telegram import ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, Update, KeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ContextTypes
 from datetime import datetime
 
@@ -69,16 +69,55 @@ async def quote_command(update, context):
     await update.message.reply_text(quote)
 
 
-async def bread_test_command(update, context):
-    # список вопросов и варииантов ответа
+async def bread_test_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # список вопросов и вариантов ответа
     questions = [
         {
-            "question": "Какой ваш любимый цвет?",
-            "options": ["Красный", "Синий", "Зеленый"]
+            "question": "1. Твоё любимое время года?",
+            "options": ["Зима", "Лето", "Осень", "Весна"]
         },
         {
-            "question": "Какой ваш любимый фрукт?",
-            "options": ["Яблоко", "Банан", "Апельсин"]
+            "question": "2. Выбери, что больше всего тебя описывает?",
+            "options": ["экстраверт (общительный)", "интроверт (стеснительный)",
+                        "амбиверт (среднее между первым и вторым)", "омниверт (зависит от настроения)"]
+        },
+        {
+            "question": "3. Какой у тебя тип темперамента?",
+            "options": ["сангвиник (экстраверты, активные)",
+                        "холерик (экстраверты, лидеры, холодные)",
+                        "меланхолик (интроверты, ранимые)",
+                        "флегматик (интроверты, терпеливые, надёжные)"]
+        },
+        {
+            "question": "4. Какие шутки вам нравятся?",
+            "options": ["про колобка/русалку", "про евреев",
+                        "про маты", "жестокие"]
+        },
+        {
+            "question": "5. Какой вид науки наиболее близок вам?",
+            "options": ["естественные", "технические",
+                        "социальные", "гуманитарные"]
+        },
+        {
+            "question": "6. Какие цвета вас больше всего привлекают?",
+            "options": ["холодные", "тёплые", "нейтральные (чб)", "всё и сразу"]
+        },
+        {
+            "question": "7. Какой фильм из предложенных вам нраится больше всего?",
+            "options": ["1+1", "Хатико", "Шерлок Холмс", "Голодные игры"]
+        },
+        {
+            "question": "8. Какой жанр музыки вам больше всего нравится?",
+            "options": ["поп", "рок", "хип-хоп", "классическая"]
+        },
+        {
+            "question": "9. Какое ваше любимое времяпровождение?",
+            "options": ["чтение книг", "просмотр сериалов",
+                        "спорт и активные игры", "прогулки"]
+        },
+        {
+            "question": "10. Какой ваш любимый напиток?",
+            "options": ["газировка", "кофе", "чай", "сок"]
         }
     ]
 
@@ -86,9 +125,12 @@ async def bread_test_command(update, context):
     async def send_question(index: int) -> None:
         if index < len(questions):
             question = questions[index]
+            # Создаем клавиатуру с кнопками в две строки
             keyboard = [
-                [InlineKeyboardButton(option, callback_data=f"q{index}_{option}") for option in question["options"]]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
+                [KeyboardButton(option) for option in question["options"][:2]],  # Первая строка
+                [KeyboardButton(option) for option in question["options"][2:]]   # Вторая строка
+            ]
+            reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
             await update.message.reply_text(question["question"], reply_markup=reply_markup)
         else:
             await update.message.reply_text("Тест завершен! Спасибо за участие.")
@@ -98,18 +140,16 @@ async def bread_test_command(update, context):
 
     # ответ пользователя
     async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        query = update.callback_query
-        await query.answer()
-        data = query.data.split("_")
-        question_index = int(data[0][1])
-        answer = data[1]
+        user_answer = update.message.text
+        question_index = len(context.user_data)  # Определяем индекс вопроса по количеству ответов
 
-        context.user_data[f"answer_{question_index}"] = answer
+        if question_index < len(questions):
+            context.user_data[f"answer_{question_index}"] = user_answer
+            # отправка следующего вопроса
+            await send_question(question_index + 1)
 
-        # отправка следующего вопроса
-        await send_question(question_index + 1)
-
-    context.application.add_handler(CallbackQueryHandler(handle_answer))
+    # добавление обработчика ответов
+    context.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_answer))
 
 
 def main():
