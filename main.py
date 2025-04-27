@@ -70,54 +70,67 @@ async def quote_command(update, context):
 
 
 async def bread_test_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # инициализация баллов в user_data
+    context.user_data['res_score'] = 0
+
     # список вопросов и вариантов ответа
     questions = [
         {
             "question": "1. Твоё любимое время года?",
-            "options": ["Зима", "Лето", "Осень", "Весна"]
+            "options": ["Зима", "Лето", "Осень", "Весна"],
+            "points": [1, 2, 3, 4]  # баллы за каждый вариант
         },
         {
             "question": "2. Выбери, что больше всего тебя описывает?",
             "options": ["экстраверт (общительный)", "интроверт (стеснительный)",
-                        "амбиверт (среднее между первым и вторым)", "омниверт (зависит от настроения)"]
+                        "амбиверт (среднее между первым и вторым)", "омниверт (зависит от настроения)"],
+            "points": [4, 1, 2, 3]
         },
         {
             "question": "3. Какой у тебя тип темперамента?",
             "options": ["сангвиник (экстраверты, активные)",
                         "холерик (экстраверты, лидеры, холодные)",
                         "меланхолик (интроверты, ранимые)",
-                        "флегматик (интроверты, терпеливые, надёжные)"]
+                        "флегматик (интроверты, терпеливые, надёжные)"],
+            "points": [4, 3, 1, 2]
         },
         {
             "question": "4. Какие шутки вам нравятся?",
             "options": ["про колобка/русалку", "про евреев",
-                        "про маты", "жестокие"]
+                        "про маты", "жестокие"],
+            "points": [1, 2, 3, 4]
         },
         {
             "question": "5. Какой вид науки наиболее близок вам?",
             "options": ["естественные", "технические",
-                        "социальные", "гуманитарные"]
+                        "социальные", "гуманитарные"],
+            "points": [4, 3, 2, 1]
         },
         {
             "question": "6. Какие цвета вас больше всего привлекают?",
-            "options": ["холодные", "тёплые", "нейтральные (чб)", "всё и сразу"]
+            "options": ["холодные", "тёплые", "нейтральные (чб)", "всё и сразу"],
+            "points": [1, 4, 2, 3]
         },
         {
             "question": "7. Какой фильм из предложенных вам нраится больше всего?",
-            "options": ["1+1", "Хатико", "Шерлок Холмс", "Голодные игры"]
+            "options": ["1+1", "Хатико", "Шерлок Холмс", "Голодные игры"],
+            "points": [4, 3, 2, 1]
         },
         {
             "question": "8. Какой жанр музыки вам больше всего нравится?",
-            "options": ["поп", "рок", "хип-хоп", "классическая"]
+            "options": ["поп", "рок", "хип-хоп", "классическая"],
+            "points": [2, 4, 3, 1]
         },
         {
             "question": "9. Какое ваше любимое времяпровождение?",
             "options": ["чтение книг", "просмотр сериалов",
-                        "спорт и активные игры", "прогулки"]
+                        "спорт и активные игры", "прогулки"],
+            "points": [1, 2, 4, 3]
         },
         {
             "question": "10. Какой ваш любимый напиток?",
-            "options": ["газировка", "кофе", "чай", "сок"]
+            "options": ["газировка", "кофе", "чай", "сок"],
+            "points": [2, 4, 3, 1]
         }
     ]
 
@@ -125,31 +138,41 @@ async def bread_test_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     async def send_question(index: int) -> None:
         if index < len(questions):
             question = questions[index]
-            # Создаем клавиатуру с кнопками в две строки
+            # создаем клавиатуру с кнопками в две строки
             keyboard = [
-                [KeyboardButton(option) for option in question["options"][:2]],  # Первая строка
-                [KeyboardButton(option) for option in question["options"][2:]]   # Вторая строка
+                [KeyboardButton(option) for option in question["options"][:2]],  # первая строка
+                [KeyboardButton(option) for option in question["options"][2:]]   # вторая строка
             ]
             reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
             await update.message.reply_text(question["question"], reply_markup=reply_markup)
         else:
-            await update.message.reply_text("Тест завершен! Спасибо за участие.")
-
-    # начало теста от первого вопроса
-    await send_question(0)
+            # подсчет баллов
+            res_score = context.user_data['res_score']
+            await update.message.reply_text(f"Тест завершен! Ваши баллы: {res_score}")
 
     # ответ пользователя
     async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         user_answer = update.message.text
-        question_index = len(context.user_data)  # Определяем индекс вопроса по количеству ответов
+        question_index = len(context.user_data.get('answers', []))  # определяем индекс вопроса по количеству ответов
 
         if question_index < len(questions):
-            context.user_data[f"answer_{question_index}"] = user_answer
-            # отправка следующего вопроса
-            await send_question(question_index + 1)
+            question = questions[question_index]
+            if user_answer in question["options"]:
+                answer_index = question["options"].index(user_answer)
+                # обновляем баллы
+                context.user_data['res_score'] += question["points"][answer_index]
+                # сохраняем ответ
+                context.user_data.setdefault('answers', []).append(user_answer)
+                # отправка следующего вопроса
+                await send_question(question_index + 1)
+            else:
+                await update.message.reply_text("Пожалуйста, выберите один из предложенных вариантов.")
 
     # добавление обработчика ответов
     context.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_answer))
+
+    # начало теста от первого вопроса
+    await send_question(0)
 
 
 def main():
