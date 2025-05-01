@@ -11,20 +11,22 @@ from telegram.ext import (
     ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler
 )
 
+from registration import reg
+
 # === Load Configuration ===
 config = configparser.ConfigParser()
 config.read('config.ini')
 
 TELEGRAM_TOKEN = config['telegram']['token']
-YANDEX_API_KEY = config['yandex']['geocoder_key']
-OPENWEATHER_API_KEY = config['openweather']['api_key']
+YANDEX_API_KEY = config['yandex']['geocoder_api_key']
+OPENWEATHER_API_KEY = config['openweather']['OPENWEATHER_API_KEY']
 SKYSCANNER_API_KEY = config['skyscanner']['api_key']
 EXCHANGE_API_KEY = config['exchange']['api_key']
-YANDEX_TRANSLATE_KEY = config['yandex']['translate_key']
+YANDEX_TRANSLATE_KEY = config['yandex']['translate_api_key']
 
 # === API Endpoints ===
 YANDEX_GEOCODER_URL = config['yandex']['geocoder_url']
-OPENWEATHER_URL = config['yandex']['openweather_url']
+OPENWEATHER_URL = config['openweather']['OPENWEATHER_URL']
 sky_base_url = config['skyscanner']['url']
 exchange_url = config['exchange']['url']
 translate_url = config['yandex']['translate_url']
@@ -159,18 +161,25 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                                    }[data])
 
 
+async def idr(update: Update, context):
+    await update.message.reply_text(str(update.effective_user.id))
+
+
 # === Main ===
 
 def main():
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
+    # app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("geocode", geocode_command))
     app.add_handler(CommandHandler("weather", weather_command))
     app.add_handler(CommandHandler("flights", flights_command))
     app.add_handler(CommandHandler("currency", currency_command))
     app.add_handler(CommandHandler("translate", translate_command))
+    app.add_handler(CommandHandler("id", idr))
+    app.add_handler(reg)
     app.add_handler(CallbackQueryHandler(button_handler))
+
     app.run_polling()
 
 
