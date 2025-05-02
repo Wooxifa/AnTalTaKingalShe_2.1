@@ -24,7 +24,7 @@ from language_support import (
 # === Configure Logging ===
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
+    level=logging.INFO,filename='log%(asctime)s'
 )
 logger = logging.getLogger(__name__)
 
@@ -45,14 +45,12 @@ YANDEX_API_KEY = config['yandex']['geocoder_api_key']
 OPENWEATHER_API_KEY = config['openweather']['OPENWEATHER_API_KEY']
 SKYSCANNER_API_KEY = config['skyscanner']['api_key']
 EXCHANGE_API_KEY = config['exchange']['api_key']
-YANDEX_TRANSLATE_KEY = config['yandex']['translate_api_key']
 
 # === API Endpoints ===
 YANDEX_GEOCODER_URL = config['yandex']['geocoder_url']
 OPENWEATHER_URL = config['openweather']['OPENWEATHER_URL']
 SKYSCANNER_URL = config['skyscanner']['url']
 EXCHANGE_URL = config['exchange']['url']
-TRANSLATE_URL = config['yandex']['translate_url']
 
 
 # === Translation Function ===
@@ -71,9 +69,7 @@ async def _(text: str, update: Update) -> str:
     lang_code = await get_user_language(user_id)
     return translate_string(
         text,
-        lang_code,
-        YANDEX_TRANSLATE_KEY,
-        TRANSLATE_URL
+        lang_code
     )
 
 
@@ -166,20 +162,40 @@ def convert_currency(amount: float, frm: str, to: str) -> Optional[float]:
         return None
 
 
-def translate_text(text: str, lang: str) -> Optional[str]:
-    """Translate text to specified language."""
-    if not YANDEX_TRANSLATE_KEY:
-        logger.warning("Translation API key not configured")
-        return None
-
+def translate_text(text: str, target_lang: str) -> Optional[str]:
+    """Translate text using Google Translate (no API key needed for small usage)."""
     try:
-        params = {'key': YANDEX_TRANSLATE_KEY, 'text': text, 'lang': lang}
-        response = requests.get(TRANSLATE_URL, params=params)
-        response.raise_for_status()
+        url = config['translation']['google_translation_url']
+        params = {
+            "client": "gtx",  # required “client” string
+            "sl": "auto",  # auto-detect source language
+            "tl": target_lang,  # target language
+            "dt": "t",  # return translation
+            "ie": "UTF-8",  # input encoding
+            "oe": "UTF-8",  # output encoding
+            "q": text
+        }
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/115.0.0.0 Safari/537.36"
+            )
+        }
 
-        data = response.json()
-        return ' '.join(data.get('text', []))
-    except (requests.RequestException, KeyError) as e:
+        response = requests.get(url, params=params, headers=headers, timeout=10)
+        if response.status_code != 200:
+            logger.error(
+                f"Translation API error: {response.status_code} – {response.text}"
+            )
+            return None
+
+        result = response.json()
+        # result[0] is a list of [ [translatedSegment, originalSegment, …], … ]
+        translated = "".join(seg[0] for seg in result[0] if seg[0])
+        return translated
+
+    except Exception as e:
         logger.error(f"Translation error: {e}")
         return None
 
@@ -415,7 +431,7 @@ async def detect_language_handler(update: Update, context: ContextTypes.DEFAULT_
         return
 
     # Try to detect language
-    detected = detect_language(text, YANDEX_TRANSLATE_KEY, TRANSLATE_URL)
+    detected = detect_language(text)
     if not detected:
         return
 
@@ -430,9 +446,7 @@ async def detect_language_handler(update: Update, context: ContextTypes.DEFAULT_
         await update.message.reply_text(
             translate_string(
                 f"I've detected you're writing in {lang_name}. I'll respond in this language now.",
-                detected,
-                YANDEX_TRANSLATE_KEY,
-                TRANSLATE_URL
+                detected
             )
         )
 
@@ -446,6 +460,8 @@ def main() -> None:
         app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
         # Register command handlers
+        app.add_handler(reg)
+
         app.add_handler(CommandHandler("start", start))
         app.add_handler(CommandHandler("help", help_command))
         app.add_handler(CommandHandler("geocode", geocode_command))
@@ -457,7 +473,7 @@ def main() -> None:
         app.add_handler(CommandHandler("id", get_user_id))
 
         # Register registration conversation handler
-        app.add_handler(reg)
+
 
         # Register callback query handler
         app.add_handler(CallbackQueryHandler(button_handler))
