@@ -46,5 +46,6 @@
   "Type /language <code> to change language": "Введите /language <языковой код> для изменения языка",
   "Type /help": "Введите /help",
   "Command not recognized": "Команда не распознана",
-  "Your Telegram ID:": "Ваш телеграмм ID:"
+  "Your Telegram ID:": "Ваш телеграмм ID:",
+  "You are already registered.": "Вы уже зарегистрированы."
 }

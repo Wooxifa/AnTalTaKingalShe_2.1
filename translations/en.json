@@ -46,5 +46,6 @@
   "Type /language <code> to change language": "Type /language <code> to change language",
   "Type /help": "Type /help",
   "Command not recognized": "Command not recognized",
-  "Your Telegram ID:": "Your Telegram ID:"
+  "Your Telegram ID:": "Your Telegram ID:",
+  "You are already registered.": "You are already registered."
 }

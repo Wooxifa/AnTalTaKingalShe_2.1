@@ -19,6 +19,8 @@ from telegram.ext import (
     filters,
 )
 
+from language_support import _
+
 # === Constants ===
 DB_PATH = 'finalproject.db'
 
@@ -88,7 +90,7 @@ async def start_registration(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     # Check if user already exists
     if await _user_exists(user_id):
-        await update.message.reply_text("You are already registered.")
+        await update.message.reply_text(await _("You are already registered.", update))
         return ConversationHandler.END
 
     # Begin registration process

@@ -6,7 +6,7 @@ Translation, and Multilingual Support
 
 import configparser
 import logging
-from typing import Optional, Tuple, Union, Dict, Any
+from typing import Optional, Tuple
 
 import requests
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -18,7 +18,7 @@ from telegram.ext import (
 from registration import reg
 from language_support import (
     get_user_language, set_user_language, translate_string,
-    SUPPORTED_LANGUAGES, detect_language
+    SUPPORTED_LANGUAGES, detect_language, _
 )
 
 # === Configure Logging ===
@@ -51,27 +51,6 @@ YANDEX_GEOCODER_URL = config['yandex']['geocoder_url']
 OPENWEATHER_URL = config['openweather']['OPENWEATHER_URL']
 SKYSCANNER_URL = config['skyscanner']['url']
 EXCHANGE_URL = config['exchange']['url']
-
-
-# === Translation Function ===
-async def _(text: str, update: Update) -> str:
-    """
-    Shorthand function to translate text based on user's language preference.
-
-    Args:
-        text: Text to translate
-        update: Telegram update object to get user ID
-
-    Returns:
-        Translated text
-    """
-    user_id = update.effective_user.id
-    lang_code = await get_user_language(user_id)
-    return translate_string(
-        text,
-        lang_code
-    )
-
 
 # === API Helper Functions ===
 

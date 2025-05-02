@@ -12,6 +12,7 @@ import sqlite3
 from typing import Dict, Optional
 
 import requests
+from telegram import Update
 
 # === Configure Logging ===
 logging.basicConfig(
@@ -267,3 +268,22 @@ def detect_language(text: str, translate_api_key: str = None,
 
 # Initialize language support when module is loaded
 setup_language_table()
+
+
+async def _(text: str, update: Update) -> str:
+    """
+    Shorthand function to translate text based on user's language preference.
+
+    Args:
+        text: Text to translate
+        update: Telegram update object to get user ID
+
+    Returns:
+        Translated text
+    """
+    user_id = update.effective_user.id
+    lang_code = await get_user_language(user_id)
+    return translate_string(
+        text,
+        lang_code
+    )
