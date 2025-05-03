@@ -5,6 +5,7 @@ Translation, and Multilingual Support
 """
 
 import configparser
+import io
 import logging
 from typing import Optional, Tuple
 
@@ -20,6 +21,7 @@ from language_support import (
     get_user_language, set_user_language, translate_string,
     SUPPORTED_LANGUAGES, detect_language, _
 )
+from weather_images import create_weather_image
 
 # === Configure Logging ===
 logging.basicConfig(
@@ -235,9 +237,8 @@ async def geocode_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 
 async def weather_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle /weather command."""
     if not context.args:
-        await update.message.reply_text(await _("Usage: /weather <location>", update))
+        await update.message.reply_text(await _("Usage: /weather_image <location>", update))
         return
 
     location = ' '.join(context.args)
@@ -250,14 +251,20 @@ async def weather_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     weather_info = get_weather(*coords)
     if weather_info:
         description, temp = weather_info
-        await update.message.reply_text(
-            (await _("Weather:", update)) + f" {description}, {temp}°C"
+
+        # Create weather image
+        image_bio = create_weather_image(location, description, temp)
+        image_bio.name = 'weather.png'
+
+        # Send image
+        await update.message.reply_photo(
+            photo=image_bio,
+            caption=f"{location}: {description}, {temp}°C"
         )
     else:
         await update.message.reply_text(
             await _("Could not retrieve weather information.", update)
         )
-
 
 async def flights_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /flights command."""
@@ -411,6 +418,7 @@ async def detect_language_handler(update: Update, context: ContextTypes.DEFAULT_
 
     # Try to detect language
     detected = detect_language(text)
+    await update.message.reply_text(detected)
     if not detected:
         return
 
@@ -452,7 +460,6 @@ def main() -> None:
         app.add_handler(CommandHandler("id", get_user_id))
 
         # Register registration conversation handler
-
 
         # Register callback query handler
         app.add_handler(CallbackQueryHandler(button_handler))

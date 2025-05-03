@@ -16,7 +16,7 @@ from telegram.ext import (
     ConversationHandler,
     MessageHandler,
     ContextTypes,
-    filters,
+    filters, Application,
 )
 
 from language_support import _

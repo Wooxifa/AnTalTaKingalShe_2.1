@@ -9,10 +9,12 @@ import json
 import logging
 import os
 import sqlite3
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 import requests
 from telegram import Update
+import langid
+from langdetect import detect_langs
 
 # === Configure Logging ===
 logging.basicConfig(
@@ -41,6 +43,9 @@ SUPPORTED_LANGUAGES = {
     'pt': 'Português',
     'it': 'Italiano'
 }
+
+DETECTION_CONFIDENCE_THRESHOLD = 0.80
+
 
 
 # === Database Functions ===
@@ -227,44 +232,48 @@ def translate_string(text: str, language_code: str, translate_api_key: str = Non
 
 # === Utility Functions ===
 
-def detect_language(text: str, translate_api_key: str = None,
-                    translate_url: str = None) -> Optional[str]:
+import langid
+
+
+def detect_language(text: str) -> Tuple[str, float]:
     """
-    Attempt to detect the language of input text.
+    Detect the language of a given text string, returning the top language code and confidence.
+
+    Uses langid for speed with a fallback to langdetect for higher confidence when needed.
 
     Args:
-        text: Text to analyze
-        translate_api_key: Optional API key for translation service
-        translate_url: Optional URL for translation service
+        text: Input text to detect
 
     Returns:
-        Detected language code or None if detection failed
+        Tuple of (language_code, confidence)
     """
-    if not translate_api_key or not translate_url:
-        return None
+    # Primary detection via langid
+    langid.set_languages(list(SUPPORTED_LANGUAGES.keys()))
+    language, confidence = langid.classify(text)
 
-    try:
-        # Note: This is assuming Yandex API format. Adjust for your API provider.
-        params = {
-            'key': translate_api_key,
-            'text': text,
-            'hint': ','.join(SUPPORTED_LANGUAGES.keys())
-        }
-        detect_url = translate_url.replace('translate', 'detect')
-        response = requests.get(detect_url, params=params, timeout=5)
+    # If confidence is low, fallback to langdetect for ensemble
+    if confidence < DETECTION_CONFIDENCE_THRESHOLD:
+        try:
+            # detect_langs returns list of Language objects with prob
+            results = detect_langs(text)
+            if results:
+                top = results[0]
+                language = top.lang
+                confidence = top.prob
+                logger.debug(f"Fallback detection: {language} with confidence {confidence}")
+        except Exception as e:
+            logger.warning(f"Fallback langdetect error: {e}")
 
-        if response.status_code == 200:
-            data = response.json()
-            detected = data.get('lang')
+    # Normalize Chinese codes
+    if language.lower() in ('zh-cn', 'zh-tw'):
+        language = 'zh'
 
-            if detected in SUPPORTED_LANGUAGES:
-                return detected
+    # Ensure supported
+    if language not in SUPPORTED_LANGUAGES:
+        logger.info(f"Detected unsupported language '{language}', defaulting to {DEFAULT_LANGUAGE}")
+        return DEFAULT_LANGUAGE, 1.0
 
-    except Exception as e:
-        logger.error(f"Language detection error: {e}")
-
-    return None
-
+    return language
 
 # Initialize language support when module is loaded
 setup_language_table()
