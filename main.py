@@ -265,40 +265,130 @@ async def bread_test_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
             if 115 <= res_score <= 120:
                 await update.message.reply_text("Вы - шаурма. Вы кайфовый человек, но скорее всего "
                                                 "стеснительный и не очень общительный")
+                chat_id = update.effective_chat.id
+                try:
+                    with open("МузыкаПроектЯ2025/Хлопки_Шаурма.mp3", 'rb') as audio_file:
+                        # Отсылаем аудио
+                        await context.bot.send_audio(chat_id=chat_id, audio=audio_file, caption="Вот аудио для тебя")
+                except FileNotFoundError:
+                    await update.message.reply_text('Извините, аудиофайл не найден.')
             elif 109 <= res_score < 115:
                 await update.message.reply_text("Вы - хлеб из майнкрафта. Думаю, вы очень хороший, добрый человек, "
                                                 "вы как и хлеб из майнкрафта - легенда)")
+                chat_id = update.effective_chat.id
+                try:
+                    with open("МузыкаПроектЯ2025/Музыка_из_Майнкрафта_Майнкрафт_хлеб.mp3", 'rb') as audio_file:
+                        await context.bot.send_audio(chat_id=chat_id, audio=audio_file, caption="Вот аудио для тебя")
+                except FileNotFoundError:
+                    await update.message.reply_text('Извините, аудиофайл не найден.')
             elif 103 <= res_score < 109:
                 await update.message.reply_text('Вы - просфора(богослужебный хлеб). Вы очень милый человек)')
+                chat_id = update.effective_chat.id
+                try:
+                    with open("МузыкаПроектЯ2025/Хор «Отче Наш»_Просфора.mp3", 'rb') as audio_file:
+                        await context.bot.send_audio(chat_id=chat_id, audio=audio_file, caption="Вот аудио для тебя")
+                except FileNotFoundError:
+                    await update.message.reply_text('Извините, аудиофайл не найден.')
             elif 97 <= res_score < 103:
                 await update.message.reply_text('Вы - блины. Ассоциация с вами- уют, тепло и комфорт)')
+                chat_id = update.effective_chat.id
+                try:
+                    with open("МузыкаПроектЯ2025/Гори гори ясно_Блины.mp3", 'rb') as audio_file:
+                        await context.bot.send_audio(chat_id=chat_id, audio=audio_file, caption="Вот аудио для тебя")
+                except FileNotFoundError:
+                    await update.message.reply_text('Извините, аудиофайл не найден.')
             elif 91 <= res_score < 97:
                 await update.message.reply_text('Вы - эчпочмак. Вы весёлый человек, возможно, душа компании')
+                chat_id = update.effective_chat.id
+                try:
+                    with open("МузыкаПроектЯ2025/Эчпочмак_Эчпочмак.mp3", 'rb') as audio_file:
+                        await context.bot.send_audio(chat_id=chat_id, audio=audio_file, caption="Вот аудио для тебя")
+                except FileNotFoundError:
+                    await update.message.reply_text('Извините, аудиофайл не найден.')
             elif 85 <= res_score < 91:
                 await update.message.reply_text('Вы - чиабатта. Вы хороший, доброжелательный человек')
+                chat_id = update.effective_chat.id
+                try:
+                    with open("МузыкаПроектЯ2025/Ча_ча_ча_чиабатта.mp3", 'rb') as audio_file:
+                        await context.bot.send_audio(chat_id=chat_id, audio=audio_file, caption="Вот аудио для тебя")
+                except FileNotFoundError:
+                    await update.message.reply_text('Извините, аудиофайл не найден.')
             elif 79 <= res_score < 85:
                 await update.message.reply_text('Вы - багет. Вы позитивный и добрый человек, возможно, общительный')
+                chat_id = update.effective_chat.id
+                try:
+                    with open("МузыкаПроектЯ2025/Я в Париже_Багет.mp3", 'rb') as audio_file:
+                        await context.bot.send_audio(chat_id=chat_id, audio=audio_file, caption="Вот аудио для тебя")
+                except FileNotFoundError:
+                    await update.message.reply_text('Извините, аудиофайл не найден.')
             elif 73 <= res_score < 79:
                 await update.message.reply_text('Вы - ватрушка с творогом. Думаю, вы добрый человек, '
                                                 'очень интересный в общении')
+                chat_id = update.effective_chat.id
+                try:
+                    with open("МузыкаПроектЯ2025/Пиво_с_раками_Ватрушка_с_творогом.mp3", 'rb') as audio_file:
+                        await context.bot.send_audio(chat_id=chat_id, audio=audio_file, caption="Вот аудио для тебя")
+                except FileNotFoundError:
+                    await update.message.reply_text('Извините, аудиофайл не найден.')
             elif 67 <= res_score < 73:
                 await update.message.reply_text('Вы - чуду(лепёшка с начинкой). Думаю, вы очень весёлый)')
+                chat_id = update.effective_chat.id
+                try:
+                    with open("МузыкаПроектЯ2025/Дагестан_Чуду.mp3", 'rb') as audio_file:
+                        await context.bot.send_audio(chat_id=chat_id, audio=audio_file, caption="Вот аудио для тебя")
+                except FileNotFoundError:
+                    await update.message.reply_text('Извините, аудиофайл не найден.')
             elif 61 <= res_score < 67:
                 await update.message.reply_text('Вы - батон. Вы самый обычный человек, это не плохо и не хорошо')
+                chat_id = update.effective_chat.id
+                try:
+                    with open("МузыкаПроектЯ2025/Цвет настроения синий_Батон.mp3.mp3", 'rb') as audio_file:
+                        await context.bot.send_audio(chat_id=chat_id, audio=audio_file, caption="Вот аудио для тебя")
+                except FileNotFoundError:
+                    await update.message.reply_text('Извините, аудиофайл не найден.')
             elif 55 <= res_score < 61:
                 await update.message.reply_text('Вы - буханка. Чёрный хлеб это хорошо)')
+                chat_id = update.effective_chat.id
+                try:
+                    with open("МузыкаПроектЯ2025/Гимн Авторадио_Буханка.mp3", 'rb') as audio_file:
+                        await context.bot.send_audio(chat_id=chat_id, audio=audio_file, caption="Вот аудио для тебя")
+                except FileNotFoundError:
+                    await update.message.reply_text('Извините, аудиофайл не найден.')
             elif 49 <= res_score < 55:
                 await update.message.reply_text('Вы - булочка с маком. Вы очень милый, добрый и общительный человек)')
+                chat_id = update.effective_chat.id
+                try:
+                    with open("МузыкаПроектЯ2025/Младший_лейтенант_Булочка_с_маком.mp3", 'rb') as audio_file:
+                        await context.bot.send_audio(chat_id=chat_id, audio=audio_file, caption="Вот аудио для тебя")
+                except FileNotFoundError:
+                    await update.message.reply_text('Извините, аудиофайл не найден.')
             elif 43 <= res_score < 49:
                 await update.message.reply_text('Вы - булочка с корицей. Думаю, вы жизнерадостный и позитивный')
+                chat_id = update.effective_chat.id
+                try:
+                    with open("МузыкаПроектЯ2025/Световая_Булочка с корицей.mp3", 'rb') as audio_file:
+                        await context.bot.send_audio(chat_id=chat_id, audio=audio_file, caption="Вот аудио для тебя")
+                except FileNotFoundError:
+                    await update.message.reply_text('Извините, аудиофайл не найден.')
             elif 37 <= res_score < 43:
                 await update.message.reply_text('Вы - бабушкин пирожок. Ассоциация с чем-то домашним,'
                                                 ' тёплым, ностальгическим.')
+                chat_id = update.effective_chat.id
+                try:
+                    with open("МузыкаПроектЯ2025/Ромашки_спрятались_Бабушкин_пирожок.mp3", 'rb') as audio_file:
+                        await context.bot.send_audio(chat_id=chat_id, audio=audio_file, caption="Вот аудио для тебя")
+                except FileNotFoundError:
+                    await update.message.reply_text('Извините, аудиофайл не найден.')
             elif 30 <= res_score < 37:
                 await update.message.reply_text('Вы - смак. Вы душа компании и очень общительный')
+                chat_id = update.effective_chat.id
+                try:
+                    with open("МузыкаПроектЯ2025/Шампунь Жумайсынба_Смак.mp3", 'rb') as audio_file:
+                        await context.bot.send_audio(chat_id=chat_id, audio=audio_file, caption="Вот аудио для тебя")
+                except FileNotFoundError:
+                    await update.message.reply_text('Извините, аудиофайл не найден.')
             else:
                 await update.message.reply_text("Спасибо за участие!")
-
 
     # ответ пользователя
     async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
