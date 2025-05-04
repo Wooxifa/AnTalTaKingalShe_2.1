@@ -18,6 +18,7 @@
   "Coordinates:": "Coordinates:",
   "Location not found.": "Location not found.",
   "Usage: /weather <location>": "Usage: /weather <location>",
+  "Usage: /weather_image <location>": "Usage: /weather_image <location>",
   "Weather:": "Weather:",
   "Could not retrieve weather information.": "Could not retrieve weather information.",
   "Usage: /flights <orig> <dest> <YYYY-MM-DD>": "Usage: /flights <orig> <dest> <YYYY-MM-DD>",
@@ -47,5 +48,7 @@
   "Type /help": "Type /help",
   "Command not recognized": "Command not recognized",
   "Your Telegram ID:": "Your Telegram ID:",
-  "You are already registered.": "You are already registered."
+  "You are already registered.": "You are already registered.",
+  "Language changed to:": "Language changed to:",
+  "I've detected you're writing in {lang_name}. I'll respond in this language now.": "I've detected you're writing in {lang_name}. I'll respond in this language now."
 }

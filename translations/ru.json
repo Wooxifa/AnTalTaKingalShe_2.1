@@ -18,6 +18,7 @@
   "Coordinates:": "Координаты:",
   "Location not found.": "Локация не найдена.",
   "Usage: /weather <location>": "Использование: /weather <локация>",
+  "Usage: /weather_image <location>": "Использование: /weather_image <локация>",
   "Weather:": "Погода:",
   "Could not retrieve weather information.": "Не смогли получить информацию по погоде.",
   "Usage: /flights <orig> <dest> <YYYY-MM-DD>": "Использование: /flights <откуда> <куда> <ГГГГ-ММ-ДД>",
@@ -47,5 +48,7 @@
   "Type /help": "Введите /help",
   "Command not recognized": "Команда не распознана",
   "Your Telegram ID:": "Ваш телеграмм ID:",
-  "You are already registered.": "Вы уже зарегистрированы."
+  "You are already registered.": "Вы уже зарегистрированы.",
+  "Language changed to:": "Язык изменен на:",
+  "I've detected you're writing in {lang_name}. I'll respond in this language now.": "Я обнаружил, что вы пишете на {lang_name}. Теперь я буду отвечать на этом языке."
 }

@@ -10,6 +10,7 @@ import logging
 import os
 import sqlite3
 from typing import Dict, Optional, Tuple
+import re
 
 import requests
 from telegram import Update
@@ -145,47 +146,39 @@ def load_translation_file(language_code: str) -> Dict:
     Returns:
         Dictionary of translated strings
     """
-    # Make sure translations directory exists
-    if not os.path.exists(TRANSLATIONS_DIR):
-        os.makedirs(TRANSLATIONS_DIR)
+    # First try to load from translations directory
+    translation_paths = [
+        os.path.join(TRANSLATIONS_DIR, f"{language_code}.json"),  # Standard path
+        f"{language_code}.json"  # Root directory fallback
+    ]
 
-    file_path = os.path.join(TRANSLATIONS_DIR, f"{language_code}.json")
+    for file_path in translation_paths:
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except (json.JSONDecodeError, FileNotFoundError) as e:
+                logger.error(f"Error loading translation file {file_path}: {e}")
 
-    # If translation file doesn't exist, create an empty one
-    if not os.path.exists(file_path):
-        if language_code != DEFAULT_LANGUAGE:
-            # Copy strings from default language as a starting point
-            strings = load_translation_file(DEFAULT_LANGUAGE)
-        else:
-            strings = {}
-
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(strings, f, ensure_ascii=False, indent=2)
-
-        return strings
-
-    # Load existing translation file
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except (json.JSONDecodeError, FileNotFoundError) as e:
-        logger.error(f"Error loading translation file {file_path}: {e}")
+    # If we get here, no valid translation file was found
+    if language_code != DEFAULT_LANGUAGE:
+        logger.warning(f"No translation file found for {language_code}, falling back to {DEFAULT_LANGUAGE}")
+        return load_translation_file(DEFAULT_LANGUAGE)
+    else:
+        logger.error(f"Default language file {DEFAULT_LANGUAGE}.json not found!")
         return {}
 
 
-def translate_string(text: str, language_code: str, translate_api_key: str = None,
-                     translate_url: str = None) -> str:
+def translate_string(text: str, language_code: str) -> str:
     """
     Translate a string to the target language.
 
-    This first checks for the string in the translation files.
-    If not found and API keys are provided, it uses the translation API.
+    This checks for the string in the translation files.
+    If translation fails, returns the original text.
 
     Args:
         text: Text to translate
         language_code: Target language code
-        translate_api_key: Optional API key for translation service
-        translate_url: Optional URL for translation service
 
     Returns:
         Translated text or original if translation failed
@@ -196,37 +189,31 @@ def translate_string(text: str, language_code: str, translate_api_key: str = Non
 
     # Look up in translation files
     translations = load_translation_file(language_code)
+
+    # If we have a direct translation, use it
     if text in translations:
         return translations[text]
 
-    # If we have API keys, try to translate
-    if translate_api_key and translate_url:
-        try:
-            params = {
-                'key': translate_api_key,
-                'text': text,
-                'lang': f"{DEFAULT_LANGUAGE}-{language_code}"
-            }
-            response = requests.get(translate_url, params=params, timeout=5)
-
-            if response.status_code == 200:
-                data = response.json()
-                translation = ' '.join(data.get('text', []))
-
-                if translation:
-                    # Store translation for future use
-                    translations[text] = translation
-
-                    file_path = os.path.join(TRANSLATIONS_DIR, f"{language_code}.json")
-                    with open(file_path, 'w', encoding='utf-8') as f:
-                        json.dump(translations, f, ensure_ascii=False, indent=2)
-
-                    return translation
-
-        except Exception as e:
-            logger.error(f"Translation API error: {e}")
+    # Format strings with placeholders won't be exact matches
+    # Let's try to find partial matches for format strings
+    if '{' in text and '}' in text:
+        for original, translated in translations.items():
+            if ('{' in original and '}' in original and
+                    len(original.split()) == len(text.split())):
+                # Replace placeholders with regex patterns
+                pattern = re.escape(original).replace('\\{.*?\\}', '(.*?)')
+                match = re.match(pattern, text)
+                if match:
+                    # Extract values and format the translated string
+                    values = match.groups()
+                    result = translated
+                    for i, value in enumerate(values):
+                        placeholder = f"{{{i}}}"
+                        result = result.replace(placeholder, value)
+                    return result
 
     # Return original text if translation fails
+    logger.debug(f"No translation found for '{text}' in {language_code}")
     return text
 
 
@@ -235,9 +222,9 @@ def translate_string(text: str, language_code: str, translate_api_key: str = Non
 import langid
 
 
-def detect_language(text: str) -> Tuple[str, float]:
+def detect_language(text: str) -> str:
     """
-    Detect the language of a given text string, returning the top language code and confidence.
+    Detect the language of a given text string, returning the language code.
 
     Uses langid for speed with a fallback to langdetect for higher confidence when needed.
 
@@ -245,7 +232,7 @@ def detect_language(text: str) -> Tuple[str, float]:
         text: Input text to detect
 
     Returns:
-        Tuple of (language_code, confidence)
+        Language code string
     """
     # Primary detection via langid
     langid.set_languages(list(SUPPORTED_LANGUAGES.keys()))
@@ -271,7 +258,7 @@ def detect_language(text: str) -> Tuple[str, float]:
     # Ensure supported
     if language not in SUPPORTED_LANGUAGES:
         logger.info(f"Detected unsupported language '{language}', defaulting to {DEFAULT_LANGUAGE}")
-        return DEFAULT_LANGUAGE, 1.0
+        return DEFAULT_LANGUAGE
 
     return language
 

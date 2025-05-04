@@ -181,7 +181,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 # === Registration Conversation Handler Setup ===
 
 reg = ConversationHandler(
-    entry_points=[CommandHandler('start', start_registration)],
+    entry_points=[CommandHandler('registration', start_registration)],
     states={
         ASK_PASSWORD: [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_gender)],
         ASK_GENDER: [CallbackQueryHandler(get_gender, pattern='^(Male|Female)$')],

@@ -1,8 +1,13 @@
 import logging
 import random
-from telegram import ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, Update, KeyboardButton
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ContextTypes
 from datetime import datetime
+
+from telegram import ReplyKeyboardMarkup, Update, KeyboardButton
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ContextTypes
+
+from registration import reg
+from test import button_handler, language_command, translate_command, geocode_command, weather_command, \
+    currency_command, flights_command, get_user_id, detect_language_handler
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG
@@ -254,7 +259,7 @@ async def bread_test_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
             # создаем клавиатуру с кнопками в две строки
             keyboard = [
                 [KeyboardButton(option) for option in question["options"][:2]],  # первая строка
-                [KeyboardButton(option) for option in question["options"][2:]]   # вторая строка
+                [KeyboardButton(option) for option in question["options"][2:]]  # вторая строка
             ]
             reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
             await update.message.reply_text(question["question"], reply_markup=reply_markup)
@@ -425,6 +430,26 @@ def main():
     application.add_handler(CommandHandler("joke", joke_command))
     application.add_handler(CommandHandler("quote", quote_command))
     application.add_handler(CommandHandler("bread_test", bread_test_command))
+
+    application.add_handler(reg)
+
+    # application.add_handler(CommandHandler("start", start))
+    # application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("geocode", geocode_command))
+    application.add_handler(CommandHandler("weather", weather_command))
+    application.add_handler(CommandHandler("flights", flights_command))
+    application.add_handler(CommandHandler("currency", currency_command))
+    application.add_handler(CommandHandler("translate", translate_command))
+    application.add_handler(CommandHandler("language", language_command))
+    application.add_handler(CommandHandler("id", get_user_id))
+
+    # Register registration conversation handler
+
+    # Register callback query handler
+    application.add_handler(CallbackQueryHandler(button_handler))
+
+    # Add language detection handler (low priority)
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, detect_language_handler), group=1)
 
     # text_handler = MessageHandler(filters.TEXT, echo)
     # application.add_handler(text_handler)

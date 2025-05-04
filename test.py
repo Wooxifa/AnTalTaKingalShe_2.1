@@ -6,6 +6,7 @@ Translation, and Multilingual Support
 
 import configparser
 import io
+import aiohttp
 import logging
 from typing import Optional, Tuple
 
@@ -47,13 +48,16 @@ YANDEX_API_KEY = config['yandex']['geocoder_api_key']
 OPENWEATHER_API_KEY = config['openweather']['OPENWEATHER_API_KEY']
 SKYSCANNER_API_KEY = config['skyscanner']['api_key']
 EXCHANGE_API_KEY = config['exchange']['api_key']
+AMADEUS_CLIENT_ID = "K9PjoxlKXgA5jlrORsC1gIfVYm8j2Ck4"
+AMADEUS_CLIENT_SECRET = "Srwi47S3JMPJcpSf"
 
 # === API Endpoints ===
 YANDEX_GEOCODER_URL = config['yandex']['geocoder_url']
 OPENWEATHER_URL = config['openweather']['OPENWEATHER_URL']
 SKYSCANNER_URL = config['skyscanner']['url']
 EXCHANGE_URL = config['exchange']['url']
-
+AMADEUS_AUTH_URL = "https://test.api.amadeus.com/v1/security/oauth2/token"
+AMADEUS_FLIGHT_URL = "https://test.api.amadeus.com/v2/shopping/flight-offers"
 # === API Helper Functions ===
 
 def get_coordinates(location_name: str) -> Optional[Tuple[float, float]]:
@@ -101,43 +105,78 @@ def get_weather(lat: float, lon: float) -> Optional[Tuple[str, float]]:
         return None
 
 
-def search_flights(origin: str, dest: str, date: str) -> Optional[Tuple[float, bool]]:
-    """Search for flight prices between locations on a specific date."""
-    if not SKYSCANNER_API_KEY:
-        logger.warning("Skyscanner API key not configured")
+def get_amadeus_token() -> Optional[str]:
+    try:
+        response = requests.post(AMADEUS_AUTH_URL, data={
+            'grant_type': 'client_credentials',
+            'client_id': AMADEUS_CLIENT_ID,
+            'client_secret': AMADEUS_CLIENT_SECRET,
+        })
+        response.raise_for_status()
+        return response.json()['access_token']
+    except requests.RequestException as e:
+        logger.error(f"Amadeus auth error: {e}")
         return None
 
+
+def search_flights(origin: str, dest: str, date: str) -> Optional[Tuple[float, bool]]:
+    """Search flight price and directness using Amadeus API."""
+    token = get_amadeus_token()
+    if not token:
+        return None
+
+    headers = {"Authorization": f"Bearer {token}"}
+    params = {
+        "originLocationCode": origin,
+        "destinationLocationCode": dest,
+        "departureDate": date,
+        "adults": 1,
+        "currencyCode": "USD",
+        "max": 1
+    }
+
     try:
-        url = f"{SKYSCANNER_URL}US/USD/en-US/{origin}-sky/{dest}-sky/{date}"
-        response = requests.get(url, params={'apiKey': SKYSCANNER_API_KEY})
+        response = requests.get(AMADEUS_FLIGHT_URL, headers=headers, params=params)
         response.raise_for_status()
-
         data = response.json()
-        quotes = data.get('Quotes', [])
 
-        if not quotes:
+        offers = data.get('data', [])
+        if not offers:
             return None
 
-        quote = quotes[0]
-        return quote.get('MinPrice'), quote.get('Direct')
-    except (requests.RequestException, KeyError) as e:
+        offer = offers[0]
+        price = float(offer['price']['total'])
+        segments = offer['itineraries'][0]['segments']
+        is_direct = len(segments) == 1
+
+        return price, is_direct
+    except (requests.RequestException, KeyError, ValueError) as e:
         logger.error(f"Flight search error: {e}")
         return None
 
 
 def convert_currency(amount: float, frm: str, to: str) -> Optional[float]:
-    """Convert currency from one type to another."""
+    """Convert currency from one type to another using FreeCurrencyAPI."""
     if not EXCHANGE_API_KEY:
-        logger.warning("Exchange API key not configured")
+        logger.warning("FreeCurrency API key not configured")
         return None
 
     try:
-        url = f"{EXCHANGE_URL}{EXCHANGE_API_KEY}/pair/{frm}/{to}/{amount}"
-        response = requests.get(url)
+        params = {
+            "apikey": EXCHANGE_API_KEY,
+            "base_currency": frm,
+            "currencies": to
+        }
+        response = requests.get(EXCHANGE_URL, params=params)
         response.raise_for_status()
-
         data = response.json()
-        return data.get('conversion_result')
+
+        rate = data['data'].get(to)
+        if rate is None:
+            logger.error(f"Conversion rate for {to} not found")
+            return None
+
+        return amount * rate
     except (requests.RequestException, KeyError) as e:
         logger.error(f"Currency conversion error: {e}")
         return None
@@ -238,7 +277,7 @@ async def geocode_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 async def weather_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not context.args:
-        await update.message.reply_text(await _("Usage: /weather_image <location>", update))
+        await update.message.reply_text(await _("Usage: /weather <location>", update))
         return
 
     location = ' '.join(context.args)
@@ -256,10 +295,10 @@ async def weather_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         image_bio = create_weather_image(location, description, temp)
         image_bio.name = 'weather.png'
 
-        # Send image
+        # Send image with translated caption
         await update.message.reply_photo(
             photo=image_bio,
-            caption=f"{location}: {description}, {temp}°C"
+            caption=f"{location}: {await _(description, update)}, {temp}°C"
         )
     else:
         await update.message.reply_text(
@@ -364,7 +403,7 @@ async def language_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             # Get the language name in the new language
             lang_name = SUPPORTED_LANGUAGES[lang_code]
             await update.message.reply_text(
-                f"Language changed to: {lang_name}"
+                (await _("Language changed to:", update)) + f" {lang_name}"
             )
         else:
             await update.message.reply_text(
@@ -418,7 +457,6 @@ async def detect_language_handler(update: Update, context: ContextTypes.DEFAULT_
 
     # Try to detect language
     detected = detect_language(text)
-    await update.message.reply_text(detected)
     if not detected:
         return
 
@@ -429,51 +467,13 @@ async def detect_language_handler(update: Update, context: ContextTypes.DEFAULT_
     if detected != current_lang and detected in SUPPORTED_LANGUAGES:
         await set_user_language(user_id, detected)
         lang_name = SUPPORTED_LANGUAGES[detected]
+        await update.message.reply_text(detected)
 
+        # Use translate_string directly with detected language to ensure message
+        # is in the newly detected language
         await update.message.reply_text(
             translate_string(
                 f"I've detected you're writing in {lang_name}. I'll respond in this language now.",
                 detected
             )
         )
-
-
-# === Main Application ===
-
-def main() -> None:
-    """Initialize and run the bot."""
-    try:
-        # Create application
-        app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-
-        # Register command handlers
-        app.add_handler(reg)
-
-        app.add_handler(CommandHandler("start", start))
-        app.add_handler(CommandHandler("help", help_command))
-        app.add_handler(CommandHandler("geocode", geocode_command))
-        app.add_handler(CommandHandler("weather", weather_command))
-        app.add_handler(CommandHandler("flights", flights_command))
-        app.add_handler(CommandHandler("currency", currency_command))
-        app.add_handler(CommandHandler("translate", translate_command))
-        app.add_handler(CommandHandler("language", language_command))
-        app.add_handler(CommandHandler("id", get_user_id))
-
-        # Register registration conversation handler
-
-        # Register callback query handler
-        app.add_handler(CallbackQueryHandler(button_handler))
-
-        # Add language detection handler (low priority)
-        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, detect_language_handler), group=1)
-
-        # Start polling
-        logger.info("Bot started. Press Ctrl+C to stop.")
-        app.run_polling()
-
-    except Exception as e:
-        logger.critical(f"Fatal error: {e}")
-
-
-if __name__ == "__main__":
-    main()
