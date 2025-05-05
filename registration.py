@@ -105,8 +105,9 @@ async def ask_gender(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     # Create gender selection buttons
     buttons = [
-        [InlineKeyboardButton("Male", callback_data="Male")],
-        [InlineKeyboardButton("Female", callback_data="Female")],
+        [InlineKeyboardButton("Male", callback_data="man")],
+        [InlineKeyboardButton("Female", callback_data="woman")],
+        [InlineKeyboardButton("Female", callback_data="bread")]
     ]
     markup = InlineKeyboardMarkup(buttons)
 

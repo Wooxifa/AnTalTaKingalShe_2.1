@@ -1,7 +1,8 @@
 import logging
 import random
 from datetime import datetime
-
+import astro
+import food
 from telegram import ReplyKeyboardMarkup, Update, KeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ContextTypes
 
@@ -47,6 +48,11 @@ async def help_command(update, context):
         "/date - текущая дата\n"
         "/joke - получить шутку\n"
         "/quote - получить цитату\n"
+        "/country {ваш текст} - вводите страну, обязательно на английском"
+        "/food - выводит случайную еду из последней заданной страны или что-то на свой вкус"
+        "/ran_country - выбирает случайную страну"
+        "/print_astro - выводит ваш знак зодиака"
+        "/astro - выводит всю подноготную про вас"
         "/bread_test - тест 'какой ты хлебушек'")
 
 
@@ -442,7 +448,12 @@ def main():
     application.add_handler(CommandHandler("translate", translate_command))
     application.add_handler(CommandHandler("language", language_command))
     application.add_handler(CommandHandler("id", get_user_id))
-
+    #ну ок
+    application.add_handler(CommandHandler("food", food_seach))
+    application.add_handler(CommandHandler("astro", get_user_id))
+    application.add_handler(CommandHandler("country", echo_country))
+    application.add_handler(CommandHandler("ran_country", choose_random_country))
+    application.add_handler(CommandHandler("print_astro", print_astro))
     # Register registration conversation handler
 
     # Register callback query handler
