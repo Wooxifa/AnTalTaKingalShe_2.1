@@ -6,6 +6,7 @@ Handles user registration flow and database operations.
 
 import logging
 import sqlite3
+from astro import zodiac_detect
 from datetime import datetime
 from typing import Optional, Tuple
 
@@ -87,7 +88,7 @@ async def _add_user(user_id: int, password: str, gender: str, birthday: datetime
 async def start_registration(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Start registration or notify if already registered."""
     user_id = update.effective_user.id
-
+    context.user_data['login'] = user_id
     # Check if user already exists
     if await _user_exists(user_id):
         await update.message.reply_text(await _("You are already registered.", update))
