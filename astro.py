@@ -157,7 +157,7 @@ async def print_astro(update, context):
                     WHERE logining.login = ?
                     '''
     zodiac, = cur.execute(zodiac_sql, ((context.user_data['login']),)).fetchone()
-    await update.message.reply_text(f"Ваш знак зодиака - {znak_zodiaka}")
+    await update.message.reply_text(f"Ваш знак зодиака - {zodiac}")
 
 
 con.close()

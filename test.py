@@ -60,6 +60,7 @@ AMADEUS_AUTH_URL = "https://test.api.amadeus.com/v1/security/oauth2/token"
 AMADEUS_FLIGHT_URL = "https://test.api.amadeus.com/v2/shopping/flight-offers"
 # === API Helper Functions ===
 
+
 def get_coordinates(location_name: str) -> Optional[Tuple[float, float]]:
     """Get geographic coordinates for a location name."""
     try:
@@ -304,6 +305,7 @@ async def weather_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await update.message.reply_text(
             await _("Could not retrieve weather information.", update)
         )
+
 
 async def flights_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle /flights command."""

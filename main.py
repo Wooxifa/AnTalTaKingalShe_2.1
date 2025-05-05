@@ -1,8 +1,8 @@
 import logging
 import random
 from datetime import datetime
-import astro
-import food
+from astro import print_astro, choose_random_country, echo_country, zodiac_detect, astro_descr
+from food import food_seach
 from telegram import ReplyKeyboardMarkup, Update, KeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ContextTypes
 
@@ -42,17 +42,19 @@ async def start(update, context):
 async def help_command(update, context):
     await update.message.reply_text(
         "Я могу помочь с следующими командами:\n"
+        "/registration - анкета регистрации\n"
+        "/z - определение зз\n"
         "/start - начать общение\n"
         "/help - помощь\n"
         "/time - текущее время\n"
         "/date - текущая дата\n"
         "/joke - получить шутку\n"
         "/quote - получить цитату\n"
-        "/country {ваш текст} - вводите страну, обязательно на английском"
-        "/food - выводит случайную еду из последней заданной страны или что-то на свой вкус"
-        "/ran_country - выбирает случайную страну"
-        "/print_astro - выводит ваш знак зодиака"
-        "/astro - выводит всю подноготную про вас"
+        "/country {ваш текст} - вводите страну, обязательно на английском\n"
+        "/food - выводит случайную еду из последней заданной страны или что-то на свой вкус\n"
+        "/ran_country - выбирает случайную страну\n"
+        "/print_astro - выводит ваш знак зодиака\n"
+        "/astro - выводит всю подноготную про вас\n"
         "/bread_test - тест 'какой ты хлебушек'")
 
 
@@ -450,10 +452,11 @@ def main():
     application.add_handler(CommandHandler("id", get_user_id))
     #ну ок
     application.add_handler(CommandHandler("food", food_seach))
-    application.add_handler(CommandHandler("astro", get_user_id))
+    application.add_handler(CommandHandler("astro", astro_descr))
     application.add_handler(CommandHandler("country", echo_country))
     application.add_handler(CommandHandler("ran_country", choose_random_country))
     application.add_handler(CommandHandler("print_astro", print_astro))
+    application.add_handler(CommandHandler("z", zodiac_detect))
     # Register registration conversation handler
 
     # Register callback query handler
