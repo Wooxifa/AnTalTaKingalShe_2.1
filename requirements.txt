@@ -1,4 +1,6 @@
-telegram~=0.0.1
-requests~=2.32.3
-pillow~=10.3.0
-SQLite3Database~=0.2.0
+aiohttp==3.11.18
+langdetect==1.0.9
+langid==1.1.6
+Pillow==11.2.1
+python-telegram-bot==22.0
+Requests==2.32.3
